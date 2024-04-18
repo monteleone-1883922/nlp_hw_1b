@@ -581,3 +581,9 @@ vostre
 vostri
 vostro
 è
+.
+,
+;
+:
+-
+_
