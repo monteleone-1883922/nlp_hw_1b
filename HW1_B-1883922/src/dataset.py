@@ -107,3 +107,40 @@ class HaSpeeDe_Dataset(Dataset):
         self.hateful_count = y[1]
         fig = px.bar(x=["neutrale", "odio"], y=y)
         fig.show()
+
+
+def create_validation_set( data_path: str, prc: float, train_data_path: str, validation_data_path: str):
+    with open(data_path, 'r', encoding="UTF8") as f:
+        data = f.readlines()
+    validation_size = int(prc * len(data))
+    train_size = len(data) - validation_size
+    validation_data, train_data = torch.utils.data.random_split(data, [validation_size, train_size])
+    with open(train_data_path, 'w', encoding="UTF8") as f:
+        f.writelines(train_data)
+    with open(validation_data_path, 'w', encoding="UTF8") as f:
+        f.writelines(validation_data)
+
+
+def build_dataloaders_fixed_embeddings(device: str):
+    train_dataset = HaSpeeDe_Dataset( "data/train-taskA.jsonl", use_embeddings=True,
+                                     stopwords_file_path="data/stopwords-it.txt", device=device)
+    train_dataset.print_data_analysis()
+
+    val_data = train_dataset.split(0.2)
+    val_dataset = HaSpeeDe_Dataset("", data=val_data)
+
+    news_test_dataset = HaSpeeDe_Dataset( "data/test-news-taskA.jsonl", use_embeddings=True,
+                                    stopwords_file_path="data/stopwords-it.txt", device=device)
+    tweets_test_dataset = HaSpeeDe_Dataset("data//test-tweets-taskA.jsonl", use_embeddings=True,
+                                         stopwords_file_path="data/stopwords-it.txt", device=device)
+
+    train_loader = train_dataset.get_dataloader(64, True)
+    val_loader = val_dataset.get_dataloader(64, True)
+    news_test_loader = news_test_dataset.get_dataloader(64, True)
+    tweets_test_loader = tweets_test_dataset.get_dataloader(64, True)
+
+
+    return train_loader, val_loader, news_test_loader, tweets_test_loader
+
+def build_dataloaders_unfrozen(device: str):
+
