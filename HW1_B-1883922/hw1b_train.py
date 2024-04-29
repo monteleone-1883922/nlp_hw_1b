@@ -45,9 +45,9 @@ def train_baseline(device: str):
     val_loader = val_dataset.get_dataloader(64, True)
     simple_model_baseline = BaselineSimpleModel(300, 1)
 
-    trainer = Trainer(simple_model_baseline, train_loader, val_loader, Adam(simple_model_baseline.parameters(), lr=0.2), nn.BCELoss(), device)
+    trainer = Trainer(simple_model_baseline, train_loader, val_loader, Adam(simple_model_baseline.parameters(), lr=0.2),
+                      nn.BCELoss(), device)
     trainer.train(15, name='Simple_Model_Baseline')
-
 
 
 def set_seed(new_seed):
@@ -56,7 +56,7 @@ def set_seed(new_seed):
     torch.manual_seed(new_seed)
     torch.cuda.manual_seed_all(new_seed)  # Se stai usando GPU
     torch.backends.cudnn.deterministic = True
-    return new_seed, new_seed+1
+    return new_seed, new_seed + 1
 
 
 def print_metrics(trainer, tweets_test_loader, news_test_loader, models):
@@ -75,7 +75,24 @@ def print_metrics(trainer, tweets_test_loader, news_test_loader, models):
         print(
             f"Validation loss: {validation_loss}\nPrecision: {precision}\nRecall: {recall}\nF1: {f1}\nAccuracy: {accuracy}")
 
+
 def train_frozen(device: str):
+    train_dataset, val_dataset, _, _ = build_datasets_fixed_embeddings(device)
+
+    train_loader = train_dataset.get_dataloader(64, True)
+    val_loader = val_dataset.get_dataloader(64, True)
+    sizes = [257, 50, 100, 20, 1]
+    model = FrozenModel(300, 128, sizes, dropout=0.2, lstm_layers=2)
+    trainer = Trainer(model, train_loader, val_loader, AdamW(model.parameters(), lr=4e-3), nn.BCELoss(), device)
+    trainer.train(23, name='Frozen_Model')
+
+
+def train_unfrozen(device: str):
+    train_loader, val_loader, _, _ = build_dataloaders_unfrozen(device)
+    sizes = [1024, 512, 256, 1]
+    model = UnfrozenModel(300, 512, sizes, dropout=0.2, lstm_layers=2, embeddings=train_loader.dataset.embedding_matrix)
+    trainer = Trainer(model, train_loader, val_loader, AdamW(model.parameters(), lr=4e-3), nn.BCELoss(), device)
+    trainer.train(23, name='Unfrozen_Model')
 
 
 def error_device(device: str):
@@ -91,16 +108,16 @@ def main():
         if sys.argv[2] == 'baseline':
             train_baseline(device)
         elif sys.argv[2] == 'frozen':
-            train_frozen()
+            train_frozen(device)
         elif sys.argv[2] == 'unfrozen':
-            train_unfrozen()
+            train_unfrozen(device)
         else:
             print('Invalid argument, please choose between baseline, frozen and unfrozen')
             exit(1)
     elif len(sys.argv) == 1:
         device = sys.argv[1]
         error_device(device)
-        train_unfrozen()
+        train_unfrozen(device)
     else:
         print('Invalid number of arguments, required at least 1 argument, please choose between cuda and cpu')
         exit(1)
