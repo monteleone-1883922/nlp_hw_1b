@@ -23,6 +23,8 @@ class HaSpeeDe_Dataset(Dataset):
                 use_encoder = False
                 j = 0
                 new_embeddings = {}
+        else:
+            encoder = {}
         if data is not None:
             self.data = data
         else:
@@ -55,12 +57,12 @@ class HaSpeeDe_Dataset(Dataset):
                     if use_embeddings:
                         embedded_sentence = []
                         for word in sentence:
-                            if word not in encoder and not use_encoder and not direct_embeddings:
+                            if not use_encoder and not direct_embeddings and word not in encoder:
                                 encoder[word] = j
                                 new_embeddings[j] = embeddings.get_word_vector(word)
                                 embedded_sentence.append(j)
                                 j += 1
-                            elif word not in encoder and not direct_embeddings:
+                            elif not direct_embeddings and word not in encoder:
                                 embedded_sentence.append(encoder["<UNK>"])
                             else:
                                 embedded_sentence.append(encoder[word])
@@ -122,52 +124,55 @@ def create_validation_set(data_path: str, prc: float, train_data_path: str, vali
         f.writelines(validation_data)
 
 
-def build_dataloaders_fixed_embeddings(device: str):
+def build_dataloaders_fixed_embeddings(device: str, test_only=False, ignore_test=False):
     stopwords_path = "data/stopwords-it.txt"
-    train_dataset = HaSpeeDe_Dataset("data/train-taskA.jsonl", use_embeddings=True,
-                                     stopwords_file_path=stopwords_path, device=device)
-    train_dataset.print_data_analysis()
-
-    val_data = train_dataset.split(0.2)
-    val_dataset = HaSpeeDe_Dataset("", data=val_data)
-
-    news_test_dataset = HaSpeeDe_Dataset("data/test-news-taskA.jsonl", use_embeddings=True,
+    if not test_only:
+        train_dataset = HaSpeeDe_Dataset("data/train-taskA.jsonl", use_embeddings=True,
                                          stopwords_file_path=stopwords_path, device=device)
-    tweets_test_dataset = HaSpeeDe_Dataset("data/test-tweets-taskA.jsonl", use_embeddings=True,
+
+        val_data = train_dataset.split(0.2)
+        val_dataset = HaSpeeDe_Dataset("", data=val_data)
+
+    if not ignore_test:
+
+        news_test_dataset = HaSpeeDe_Dataset("data/test-news-taskA.jsonl", use_embeddings=True,
+                                             stopwords_file_path=stopwords_path, device=device)
+        tweets_test_dataset = HaSpeeDe_Dataset("data/test-tweets-taskA.jsonl", use_embeddings=True,
                                            stopwords_file_path=stopwords_path, device=device)
 
-    train_loader = train_dataset.get_dataloader(64, True)
-    val_loader = val_dataset.get_dataloader(64, True)
-    news_test_loader = news_test_dataset.get_dataloader(64, True)
-    tweets_test_loader = tweets_test_dataset.get_dataloader(64, True)
+    train_loader = train_dataset.get_dataloader(64, True) if not test_only else None
+    val_loader = val_dataset.get_dataloader(64, True) if not test_only else None
+    news_test_loader = news_test_dataset.get_dataloader(64, True) if not ignore_test else None
+    tweets_test_loader = tweets_test_dataset.get_dataloader(64, True) if not ignore_test else None
 
     return train_loader, val_loader, news_test_loader, tweets_test_loader
 
 
-def build_dataloaders_unfrozen(device: str, encoding = None):
+def build_dataloaders_unfrozen(device: str, encoding = None, test_only=False, ignore_test=False):
     train_path = "data/train.jsonl"
     validation_path = "data/validation.jsonl"
     stopwords_path = "data/stopwords-it.txt"
-    create_validation_set("data/train-taskA.jsonl", 0.2, train_path, validation_path)
-
-    train_dataset = HaSpeeDe_Dataset(train_path, use_embeddings=True,
+    if not test_only:
+        create_validation_set("data/train-taskA.jsonl", 0.2, train_path, validation_path)
+    if not test_only or encoding is None:
+        train_dataset = HaSpeeDe_Dataset(train_path, use_embeddings=True,
                                      stopwords_file_path=stopwords_path, direct_embeddings=False, device=device)
     encoder = train_dataset.encoding if encoding is None else encoding
-
-    val_dataset = HaSpeeDe_Dataset(validation_path, use_embeddings=True, stopwords_file_path=stopwords_path,
+    if not test_only:
+        val_dataset = HaSpeeDe_Dataset(validation_path, use_embeddings=True, stopwords_file_path=stopwords_path,
                                    encoder=encoder, direct_embeddings=False, device=device)
-
-    tweets_test_dataset = HaSpeeDe_Dataset("data/test-tweets-taskA.jsonl", use_embeddings=True,
-                                           stopwords_file_path=stopwords_path,
-                                           encoder=encoder, direct_embeddings=False,
-                                           device=device)  # /test-tweets-taskA.jsonl
-    news_test_dataset = HaSpeeDe_Dataset("data/test-news-taskA.jsonl", use_embeddings=True,
+    if not ignore_test:
+        tweets_test_dataset = HaSpeeDe_Dataset("data/test-tweets-taskA.jsonl", use_embeddings=True,
+                                               stopwords_file_path=stopwords_path,
+                                               encoder=encoder, direct_embeddings=False,
+                                               device=device)
+        news_test_dataset = HaSpeeDe_Dataset("data/test-news-taskA.jsonl", use_embeddings=True,
                                          stopwords_file_path=stopwords_path,
                                          encoder=encoder, direct_embeddings=False, device=device)
 
-    train_loader = train_dataset.get_dataloader(64, True)
-    val_loader = val_dataset.get_dataloader(64, True)
-    news_test_loader = news_test_dataset.get_dataloader(64, True)
-    tweets_test_loader = tweets_test_dataset.get_dataloader(64, True)
+    train_loader = train_dataset.get_dataloader(64, True) if not test_only else None
+    val_loader = val_dataset.get_dataloader(64, True) if not test_only else None
+    news_test_loader = news_test_dataset.get_dataloader(64, True) if not ignore_test else None
+    tweets_test_loader = tweets_test_dataset.get_dataloader(64, True) if not ignore_test else None
 
     return train_loader, val_loader, news_test_loader, tweets_test_loader
