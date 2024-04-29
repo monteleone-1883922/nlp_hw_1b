@@ -96,7 +96,7 @@ class HaSpeeDe_Dataset(Dataset):
     def get_dataloader(self, batch_size: int, shuffle: bool) -> DataLoader:
         return DataLoader(self, batch_size=batch_size, shuffle=shuffle, collate_fn=self.collate)
 
-    def print_data_analysis(self, show:bool = True):
+    def print_data_analysis(self, show: bool = True):
         y = [0, 0]
         for el in self.data:
             if el[1] == 1:
@@ -122,7 +122,7 @@ def create_validation_set(data_path: str, prc: float, train_data_path: str, vali
         f.writelines(validation_data)
 
 
-def build_datasets_fixed_embeddings(device: str):
+def build_dataloaders_fixed_embeddings(device: str):
     stopwords_path = "data/stopwords-it.txt"
     train_dataset = HaSpeeDe_Dataset("data/train-taskA.jsonl", use_embeddings=True,
                                      stopwords_file_path=stopwords_path, device=device)
@@ -136,12 +136,15 @@ def build_datasets_fixed_embeddings(device: str):
     tweets_test_dataset = HaSpeeDe_Dataset("data/test-tweets-taskA.jsonl", use_embeddings=True,
                                            stopwords_file_path=stopwords_path, device=device)
 
+    train_loader = train_dataset.get_dataloader(64, True)
+    val_loader = val_dataset.get_dataloader(64, True)
+    news_test_loader = news_test_dataset.get_dataloader(64, True)
+    tweets_test_loader = tweets_test_dataset.get_dataloader(64, True)
+
+    return train_loader, val_loader, news_test_loader, tweets_test_loader
 
 
-    return train_dataset, val_dataset, news_test_dataset, tweets_test_dataset
-
-
-def build_dataloaders_unfrozen(device: str):
+def build_dataloaders_unfrozen(device: str, encoding = None):
     train_path = "data/train.jsonl"
     validation_path = "data/validation.jsonl"
     stopwords_path = "data/stopwords-it.txt"
@@ -149,7 +152,7 @@ def build_dataloaders_unfrozen(device: str):
 
     train_dataset = HaSpeeDe_Dataset(train_path, use_embeddings=True,
                                      stopwords_file_path=stopwords_path, direct_embeddings=False, device=device)
-    encoder = train_dataset.encoding
+    encoder = train_dataset.encoding if encoding is None else encoding
 
     val_dataset = HaSpeeDe_Dataset(validation_path, use_embeddings=True, stopwords_file_path=stopwords_path,
                                    encoder=encoder, direct_embeddings=False, device=device)
