@@ -85,7 +85,7 @@ class Trainer():
                     #       "accuracy": accuracy,
                     #       "train_loss": total_loss / len(self.train_dataloader)})
         if save:
-            torch.save(best_model, name + f'-{target_f1}.pth')
+            torch.save(best_model, 'data/' + name +'.pth')
         if use_wandb:
             pass
             # wandb.finish()
