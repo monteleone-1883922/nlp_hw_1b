@@ -65,8 +65,10 @@ class HaSpeeDe_Dataset(Dataset):
                                 j += 1
                             elif not direct_embeddings and word not in encoder:
                                 embedded_sentence.append(encoder["<UNK>"])
-                            else:
+                            elif not direct_embeddings:
                                 embedded_sentence.append(encoder[word])
+                            else:
+                                embedded_sentence.append(embeddings.get_word_vector(word))
                         if len(embedded_sentence) == 0:
                             print("error empty sentence")
                         sentence = embedded_sentence
