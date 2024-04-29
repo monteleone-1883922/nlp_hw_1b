@@ -25,6 +25,7 @@ class HaSpeeDe_Dataset(Dataset):
                 new_embeddings = {}
         else:
             encoder = {}
+            use_encoder = False
         if data is not None:
             self.data = data
         else:
