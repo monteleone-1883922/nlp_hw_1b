@@ -12,33 +12,6 @@ from torch.optim import Adam, AdamW
 import json
 
 
-# def train_baseline(device: str):
-#     train_dataset, val_dataset, news_test_dataset, tweets_test_dataset = build_datasets_fixed_embeddings(device)
-#
-#     train_loader = train_dataset.get_dataloader(64, True)
-#     val_loader = val_dataset.get_dataloader(64, True)
-#     news_test_loader = news_test_dataset.get_dataloader(64, True)
-#     tweets_test_loader = tweets_test_dataset.get_dataloader(64, True)
-#
-#     neutral_count = train_dataset.neutral_count
-#     hateful_count = train_dataset.hateful_count
-#
-#     stratified_baseline = BaselineModel(neutral_count, hateful_count)
-#     random_baseline = BaselineModel(1, 2)
-#     majority_baseline = BaselineModel(0, 1)
-#
-#     simple_model_baseline = BaselineSimpleModel(300, 1)
-#
-#     trainer = Trainer(simple_model_baseline, train_loader, val_loader, None, nn.BCELoss(), device,
-#                       test_dataloader=news_test_loader)
-#
-#     trainer.train(15, name='Simple_Model_Baseline')
-#     simple_model_baseline.load_state_dict(torch.load('data/Simple_Model_Baseline.pth'))
-#     print_metrics(trainer, tweets_test_loader, news_test_loader,
-#                   [(stratified_baseline, 'Stratified Baseline'), (random_baseline, 'Random Baseline'),
-#                    (majority_baseline, 'Majority Baseline'), (simple_model_baseline, 'Simple Model Baseline')])
-#
-
 def train_baseline(device: str):
     train_loader, val_loader, _, _ = build_dataloaders_fixed_embeddings(device)
 
