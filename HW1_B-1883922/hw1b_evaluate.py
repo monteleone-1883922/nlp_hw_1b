@@ -44,7 +44,9 @@ def main():
     else:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     encodings = load_encodings()
+    print("loading datasets")
     test_dataloader, _, news_test_loader, tweets_test_loader = build_dataloaders_fixed_embeddings(device)
+    print("datasets loaded")
     test_dataloader.dataset.print_data_analysis(show=False)
     neutral_count = test_dataloader.dataset.neutral_count
     hateful_count = test_dataloader.dataset.hateful_count
@@ -61,11 +63,12 @@ def main():
     simple_model_baseline = BaselineSimpleModel(300, 1)
     simple_model_baseline.load_state_dict(torch.load('data/Simple_Model_Baseline.pth'))
     trainer = Trainer(None, None, None, None, nn.BCELoss(), device)
+    print("begin models validation")
     print_metrics(trainer, tweets_test_loader, news_test_loader,
                   [(stratified_baseline, 'Stratified Baseline'), (random_baseline, 'Random Baseline'),
                    (majority_baseline, 'Majority Baseline'), (simple_model_baseline, 'Simple Model Baseline'),
                    (frozen_model, 'Frozen Model')])
-    _, _, news_test_loader, tweets_test_loader = build_dataloaders_unfrozen(device, encodings)
+    _, _, news_test_loader, tweets_test_loader = build_dataloaders_unfrozen(device, encodings, test_only=True)
     print_metrics(trainer, tweets_test_loader, news_test_loader,
                   [(unfrozen_model, 'Unfrozen Model')])
 
