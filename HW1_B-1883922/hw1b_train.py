@@ -49,7 +49,10 @@ def train_unfrozen(device: str):
     print('datasets loaded')
     save_encodings(train_loader)
     sizes = [1024, 512, 256, 1]
-    model = UnfrozenModel(300, 512, sizes, dropout=0.2, lstm_layers=2, embeddings=train_loader.dataset.embeddings)
+    embeddings = train_loader.dataset.embeddings
+    embeddings = sorted(list(embeddings.items()), key=lambda x: x[0])
+    embeddings = torch.tensor([x[1] for x in embeddings])
+    model = UnfrozenModel(300, 512, sizes, dropout=0.2, lstm_layers=2, embeddings=embeddings)
     trainer = Trainer(model, train_loader, val_loader, AdamW(model.parameters(), lr=4e-3), nn.BCELoss(), device)
     print('training')
     trainer.train(23, name='Unfrozen_Model')

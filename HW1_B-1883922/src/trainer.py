@@ -48,8 +48,8 @@ class Trainer():
             #     config=config
             # )
         for epoch in range(epochs):
-            if epoch == 3:
-                self.model.freeze_embeddings(False)
+            # if epoch == 3:
+            #     self.model.freeze_embeddings(False)
             self.model.train()  # Set the model to training mode
             total_loss = 0
             for i, batch in enumerate(self.train_dataloader):

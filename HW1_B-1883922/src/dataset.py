@@ -134,7 +134,7 @@ def build_dataloaders_fixed_embeddings(device: str, test_only=False, ignore_test
                                          stopwords_file_path=stopwords_path, device=device)
 
         val_data = train_dataset.split(0.2)
-        val_dataset = HaSpeeDe_Dataset("", data=val_data)
+        val_dataset = HaSpeeDe_Dataset("", data=val_data, device=device)
 
     if not ignore_test:
 

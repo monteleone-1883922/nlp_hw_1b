@@ -23,11 +23,13 @@ class BaselineSimpleModel(nn.Module):
 
     def forward(self, x):
         seq, lens = x
-        packed = pack_padded_sequence(seq, lens, batch_first=True, enforce_sorted=False)
+        device = lens.device
+        packed = pack_padded_sequence(seq, lens.cpu(), batch_first=True, enforce_sorted=False)
         data = self.linear(packed.data).squeeze()
         data = self.sigmoid(data)
         packed = torch.nn.utils.rnn.PackedSequence(data, packed.batch_sizes, packed.sorted_indices,
                                                    packed.unsorted_indices)
         seq, lens = pad_packed_sequence(packed, batch_first=True)
+        lens = lens.to(device)
         seq_mean = seq.sum(dim=1) / lens.float()
         return seq_mean
