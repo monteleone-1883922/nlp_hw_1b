@@ -6,12 +6,13 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class BaselineModel(nn.Module):
 
-    def __init__(self, len0, len1):
+    def __init__(self, len0, len1,device = 'cpu'):
         super(BaselineModel, self).__init__()
+        self.device = device
         self.p = len0 / (len0 + len1)
 
     def forward(self, x):
-        return torch.tensor([0 if np.random.rand() < self.p else 1 for _ in range(x[0].shape[0])], dtype=torch.float)
+        return torch.tensor([0 if np.random.rand() < self.p else 1 for _ in range(x[0].shape[0])], dtype=torch.float, device=self.device)
 
 
 class BaselineSimpleModel(nn.Module):

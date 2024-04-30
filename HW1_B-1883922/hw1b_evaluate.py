@@ -7,24 +7,37 @@ from src.model_frozen import HateDetectionModule as FrozenModel
 from src.model_unfrozen import HateDetectionModule as UnfrozenModel
 from src.dataset import HaSpeeDe_Dataset, build_dataloaders_unfrozen, build_dataloaders_fixed_embeddings
 from torch import nn
+import matplotlib.pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
 
 
 def print_metrics(trainer, tweets_test_loader, news_test_loader, models):
     for model, name in models:
-        trainer.model = model
+        trainer.set_model(model)
         trainer.test_dataloader = news_test_loader
-        validation_loss, precision, recall, f1, accuracy = trainer.validate()
+        validation_loss, precision, recall, f1, accuracy, cm = trainer.validate(test=True)
         print()
         print(f"{name} metrics on news test set")
         print(
             f"Validation loss: {validation_loss}\nPrecision: {precision}\nRecall: {recall}\nF1: {f1}\nAccuracy: {accuracy}")
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["neutral", "hateful"])
+        plt.title("Confusion matrix for " + name + " on news test set")
+        disp.plot()
+        plt.savefig(f"data/confusion_matrix_{name}_news.png")  # Salva la figura come un'immagine
+        plt.close()
+        plt.show()
         trainer.test_dataloader = tweets_test_loader
-        validation_loss, precision, recall, f1, accuracy = trainer.validate()
+        validation_loss, precision, recall, f1, accuracy, cm = trainer.validate(test=True)
         print()
         print(f"{name} metrics on tweets test set")
         print(
             f"Validation loss: {validation_loss}\nPrecision: {precision}\nRecall: {recall}\nF1: {f1}\nAccuracy: {accuracy}")
-
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["neutral", "hateful"])
+        plt.title("Confusion matrix for " + name + " on tweets test set")
+        disp.plot()
+        plt.savefig(f"data/confusion_matrix_{name}_tweets.png")  # Salva la figura come un'immagine
+        plt.close()
+        plt.show()
 
 def error_device(device: str):
     if device != 'cuda' and device != 'cpu':
@@ -52,14 +65,14 @@ def main():
     hateful_count = test_dataloader.dataset.hateful_count
 
     sizes = [1024, 512, 256, 1]
-    unfrozen_model = UnfrozenModel(300, 512, sizes, lstm_layers=2)
+    unfrozen_model = UnfrozenModel(300, 512, sizes, lstm_layers=2, len_embeddings=21240)
     unfrozen_model.load_state_dict(torch.load('data/Unfrozen_Model.pth'))
     sizes = [257, 50, 100, 20, 1]
     frozen_model = FrozenModel(300, 128, sizes, lstm_layers=2)
     frozen_model.load_state_dict(torch.load('data/Frozen_Model.pth'))
-    stratified_baseline = BaselineModel(neutral_count, hateful_count)
-    random_baseline = BaselineModel(1, 2)
-    majority_baseline = BaselineModel(0, 1)
+    stratified_baseline = BaselineModel(neutral_count, hateful_count, device)
+    random_baseline = BaselineModel(1, 2, device)
+    majority_baseline = BaselineModel(0, 1, device)
     simple_model_baseline = BaselineSimpleModel(300, 1)
     simple_model_baseline.load_state_dict(torch.load('data/Simple_Model_Baseline.pth'))
     trainer = Trainer(None, None, None, None, nn.BCELoss(), device)

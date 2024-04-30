@@ -10,7 +10,7 @@ class Trainer():
 
     def __init__(self, model, train_dataloader, validation_dataloader, optimizer, loss_function, device,
                  test_dataloader=None):
-        self.model = model.to(device)
+        self.model = None if model is None else model.to(device)
         self.train_dataloader = train_dataloader
         self.validation_dataloader = validation_dataloader
         self.optimizer = optimizer
@@ -18,9 +18,12 @@ class Trainer():
         self.device = device
         self.test_dataloader = test_dataloader
 
+    def set_model(self, model):
+        self.model = model.to(self.device)
+
     @staticmethod
     def evaluation_parameters(y_true, y_pred):
-        cm = confusion_matrix(y_true, y_pred).ravel()
+        cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
         precision = precision_score(y_true, y_pred)
         recall = recall_score(y_true, y_pred)
         f1 = f1_score(y_true, y_pred)
@@ -35,7 +38,7 @@ class Trainer():
         sys.stdout.flush()
 
     def train(self, epochs: int, use_wandb: bool = False, config: dict = {}, name: str = "", target_f1: float = 0.0,
-              validate: bool = True, freeze_after : int = 1000):
+              validate: bool = True, freeze_after: int = 1000):
         best_model = None
         save = False
         if use_wandb:
@@ -71,7 +74,7 @@ class Trainer():
 
             # Print the average loss for this epoch
             if validate:
-                validation_loss, precision, recall, f1, accuracy = self.validate(use_wandb)
+                validation_loss, precision, recall, f1, accuracy, cm = self.validate(use_wandb)
                 if f1 > target_f1:
                     best_model = self.model.state_dict()
                     target_f1 = f1
@@ -85,7 +88,7 @@ class Trainer():
                     #       "accuracy": accuracy,
                     #       "train_loss": total_loss / len(self.train_dataloader)})
         if save:
-            torch.save(best_model, 'data/' + name +'.pth')
+            torch.save(best_model, 'data/' + name + '.pth')
         if use_wandb:
             pass
             # wandb.finish()
@@ -100,7 +103,7 @@ class Trainer():
         all_predictions = torch.tensor([])
         all_targets = torch.tensor([])
         with torch.no_grad():  # Do not calculate gradients
-            for i, batch in enumerate(self.validation_dataloader):
+            for i, batch in enumerate(dataloader):
                 self.print_progress_bar(i / len(dataloader), text="| validation")
                 # Get the inputs and targets from the batch
                 inputs, targets, lens = batch
@@ -114,9 +117,6 @@ class Trainer():
                 # Store predictions and targets
                 all_predictions = torch.cat((all_predictions, outputs.squeeze().round().cpu()))
                 all_targets = torch.cat((all_targets, targets.cpu()))
-        validation_loss = total_loss / len(self.validation_dataloader)
-        precision = precision_score(all_targets, all_predictions)
-        recall = recall_score(all_targets, all_predictions)
-        f1 = f1_score(all_targets, all_predictions)
-        accuracy = accuracy_score(all_targets, all_predictions)
-        return validation_loss, precision, recall, f1, accuracy
+        validation_loss = total_loss / len(dataloader)
+        cm, precision, recall, f1, accuracy = self.evaluation_parameters(all_targets, all_predictions)
+        return validation_loss, precision, recall, f1, accuracy, cm

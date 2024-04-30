@@ -6,7 +6,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 class HateDetectionModule(nn.Module):
 
-    def __init__(self, input_size, hidden_size, sizes, dropout=0, lstm_layers=1, embeddings=None):
+    def __init__(self, input_size, hidden_size, sizes, dropout=0, lstm_layers=1, embeddings=None,
+                 len_embeddings: int = -1):
         super(HateDetectionModule, self).__init__()
         self.init_classifier(sizes, dropout)
         self.lstm = nn.LSTM(input_size, hidden_size, batch_first=True, dropout=dropout, bidirectional=True,
@@ -18,8 +19,9 @@ class HateDetectionModule(nn.Module):
             if 'weight' in name:
                 init.xavier_uniform_(param)
 
-        self.embeddings = nn.Embedding(len(embeddings), 300)
-        self.embeddings.weight.data.copy_(embeddings)
+        self.embeddings = nn.Embedding(len_embeddings if embeddings is None else len(embeddings), 300)
+        if embeddings is not None:
+            self.embeddings.weight.data.copy_(embeddings)
 
     def init_classifier(self, sizes, dropout=0):
         sequence = []

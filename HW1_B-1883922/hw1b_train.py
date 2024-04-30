@@ -16,7 +16,8 @@ def train_baseline(device: str, train_loader, val_loader):
     set_seed(77)
     simple_model_baseline = BaselineSimpleModel(300, 1)
 
-    trainer = Trainer(simple_model_baseline, train_loader, val_loader, AdamW(simple_model_baseline.parameters(), lr=0.2),
+    trainer = Trainer(simple_model_baseline, train_loader, val_loader,
+                      AdamW(simple_model_baseline.parameters(), lr=0.2),
                       nn.BCELoss(), device)
     print('training')
     trainer.train(15, name='Simple_Model_Baseline')
@@ -60,7 +61,7 @@ def train_unfrozen(device: str):
 
 
 def save_encodings(train_loader):
-    with open('data/encoding.json', 'w', encoding='utf-8') as f:
+    with open('data/encodings.json', 'w', encoding='utf-8') as f:
         json.dump(train_loader.dataset.encoding, f)
 
 
@@ -88,7 +89,6 @@ def main():
     print()
     print('starting training unfrozen embeddings model')
     train_unfrozen(device)
-
 
 
 if __name__ == '__main__':
