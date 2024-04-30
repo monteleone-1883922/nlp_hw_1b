@@ -35,7 +35,7 @@ class Trainer():
         sys.stdout.flush()
 
     def train(self, epochs: int, use_wandb: bool = False, config: dict = {}, name: str = "", target_f1: float = 0.0,
-              validate: bool = True):
+              validate: bool = True, freeze_after : int = 1000):
         best_model = None
         save = False
         if use_wandb:
@@ -48,8 +48,8 @@ class Trainer():
             #     config=config
             # )
         for epoch in range(epochs):
-            # if epoch == 3:
-            #     self.model.freeze_embeddings(False)
+            if epoch == freeze_after:
+                self.model.freeze_embeddings(False)
             self.model.train()  # Set the model to training mode
             total_loss = 0
             for i, batch in enumerate(self.train_dataloader):

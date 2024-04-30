@@ -13,10 +13,10 @@ import json
 
 
 def train_baseline(device: str, train_loader, val_loader):
-
+    set_seed(77)
     simple_model_baseline = BaselineSimpleModel(300, 1)
 
-    trainer = Trainer(simple_model_baseline, train_loader, val_loader, Adam(simple_model_baseline.parameters(), lr=0.2),
+    trainer = Trainer(simple_model_baseline, train_loader, val_loader, AdamW(simple_model_baseline.parameters(), lr=0.2),
                       nn.BCELoss(), device)
     print('training')
     trainer.train(15, name='Simple_Model_Baseline')
@@ -33,7 +33,7 @@ def set_seed(new_seed):
 
 
 def train_frozen(device: str, train_loader, val_loader):
-    set_seed(108)
+    set_seed(111)
     sizes = [257, 50, 100, 20, 1]
     model = FrozenModel(300, 128, sizes, dropout=0.2, lstm_layers=2)
     trainer = Trainer(model, train_loader, val_loader, AdamW(model.parameters(), lr=4e-3), nn.BCELoss(), device)
@@ -43,7 +43,7 @@ def train_frozen(device: str, train_loader, val_loader):
 
 
 def train_unfrozen(device: str):
-    set_seed(59)
+    set_seed(108)
     print('loading datasets')
     train_loader, val_loader, _, _ = build_dataloaders_unfrozen(device, ignore_test=True)
     print('datasets loaded')
@@ -53,9 +53,9 @@ def train_unfrozen(device: str):
     embeddings = sorted(list(embeddings.items()), key=lambda x: x[0])
     embeddings = torch.tensor([x[1] for x in embeddings])
     model = UnfrozenModel(300, 512, sizes, dropout=0.2, lstm_layers=2, embeddings=embeddings)
-    trainer = Trainer(model, train_loader, val_loader, AdamW(model.parameters(), lr=4e-3), nn.BCELoss(), device)
+    trainer = Trainer(model, train_loader, val_loader, AdamW(model.parameters(), lr=2e-4), nn.BCELoss(), device)
     print('training')
-    trainer.train(23, name='Unfrozen_Model')
+    trainer.train(23, name='Unfrozen_Model', freeze_after=3)
     print('training finished')
 
 
@@ -77,6 +77,7 @@ def main():
     else:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print('loading datasets')
+    set_seed(10)
     train_loader, val_loader, _, _ = build_dataloaders_fixed_embeddings(device, ignore_test=True)
     print('datasets loaded')
     print('starting training baseline simple model')
